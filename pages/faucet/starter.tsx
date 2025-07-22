@@ -11,6 +11,8 @@ const Starter = () => {
     const  [txSig, setTxSig] = React.useState<string>('');
     const { connection } = useConnection();
     const { publicKey, sendTransaction} = useWallet();
+    
+
 
     const fundwallet = async ( event : { preventDefault: () => void }) => {
         event.preventDefault();
