@@ -39,9 +39,15 @@ const Starter = () => {
     );
 
     try {
-      const signature = await sendTransaction(transaction, connection, {
-        signers: [sender],
-      });
+      // Fetch a recent blockhash manually
+const { blockhash } = await connection.getLatestBlockhash();
+transaction.recentBlockhash = blockhash;
+transaction.feePayer = publicKey;
+
+const signature = await sendTransaction(transaction, connection, {
+  signers: [sender],
+});
+
       setTxSig(signature);
     } catch (error) {
       toast.error("Error funding wallet");
