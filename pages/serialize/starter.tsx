@@ -26,55 +26,77 @@ const Starter: FC= () => {
         await handleTransactionSubmit(studentIntro);
     };
    //to create a new transaction
-    const handleTransactionSubmit = async (studentIntro: StudentIntro) => {
-        if (!connection || !publicKey) {
-            toast.error("connect you wallet please");
-            return;
-        }
-        const buffer = studentIntro.serialize();
-        const transaction = new web3.Transaction();
+const handleTransactionSubmit = async (studentIntro : StudentIntro) => {
+    if (!publicKey || !connection || !sendTransaction) {
+        toast.error("Wallet not connected");
+        return;
+    }
 
-        const [ pda , bump ] = web3.PublicKey.findProgramAddressSync(
-            [ publicKey.toBuffer() ],
-            new web3.PublicKey(TARGET_PROGRAM_ID),
+    try {
+        // ✅ Step 1: Fetch recent blockhash
+        const latestBlockhash = await connection.getLatestBlockhash();
+        console.log("Latest Blockhash:", latestBlockhash);
+
+        // ✅ Step 2: Derive PDA
+        const [pda] = web3.PublicKey.findProgramAddressSync(
+            [publicKey.toBuffer()],
+            new web3.PublicKey(TARGET_PROGRAM_ID)
         );
+        console.log("Derived PDA:", pda.toBase58());
 
+        // ✅ Step 3: Create Instruction
         const instruction = new web3.TransactionInstruction({
+            programId: new web3.PublicKey(TARGET_PROGRAM_ID),
             keys: [
                 {
                     pubkey: publicKey,
                     isSigner: true,
-                    isWritable: false
+                    isWritable: false,
                 },
                 {
                     pubkey: pda,
                     isSigner: false,
-                    isWritable: true
+                    isWritable: true,
                 },
                 {
                     pubkey: web3.SystemProgram.programId,
                     isSigner: false,
-                    isWritable: false
-                }
+                    isWritable: false,
+                },
             ],
-            programId: new web3.PublicKey(TARGET_PROGRAM_ID),
-            data: buffer
+            data: Buffer.alloc(0), // no data for now
         });
-        transaction.add(instruction);
+        console.log("Instruction created");
 
-        try {
-            const response = await sendTransaction(transaction, connection);
-            console.log(`Transaction submitted: https://explorer.solana.com/tx/${response}?cluster=devnet`)
-        }
-        catch (error: any) {
-            toast.error('Transaction failed');
-            console.log("Error: ", error);
-        }
-        finally {
-            setName('');
-            setThoughts('');
-        };
-    };
+        // ✅ Step 4: Create Transaction
+        const transaction = new web3.Transaction().add(instruction);
+        transaction.recentBlockhash = latestBlockhash.blockhash;
+        transaction.feePayer = publicKey;
+        console.log("Transaction constructed");
+
+        // ✅ Step 5: Send transaction via wallet
+        const signature = await sendTransaction(transaction, connection);
+        console.log("Transaction signature:", signature);
+
+        // ✅ Step 6: Confirm transaction using updated method
+        const confirmation = await connection.confirmTransaction(
+            {
+                signature,
+                ...latestBlockhash,
+            },
+            "confirmed"
+        );
+        console.log("Transaction confirmation:", confirmation);
+
+        toast.success("Transaction confirmed!");
+        setName("");
+        setThoughts("");
+    } catch (error: any) {
+        console.error("Transaction failed:", error);
+        toast.error("Transaction failed: " + (error?.message || "Unknown error"));
+    } 
+};
+
 
     React.useEffect(() => {
         StudentIntroCoordinator.fetchpage(
