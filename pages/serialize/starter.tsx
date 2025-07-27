@@ -6,10 +6,10 @@ import { toast } from 'react-toastify';
 import { StudentIntro} from '../../models/serialize/StudentIntro';
 import { StudentIntroCoordinator } from '../../scripts/serialize/StudentIntroCoordinator'
 const Starter: FC= () => {
-
+// what will be sent to the program
     const [name, setName] = React.useState<string>("");
     const [thoughts, setThoughts] = React.useState<string>("");
-
+//what will be displayed on the page from the program
     const [studentIntros, setStudentIntros] = React.useState<StudentIntro[]>([]);
     const [page, setPage] = React.useState<number>(1);
     const [search, setSearch] = React.useState<string>("");
@@ -18,13 +18,14 @@ const Starter: FC= () => {
 
     const { connection } = useConnection();
     const { publicKey, sendTransaction } = useWallet();
-
+    
+    //to submit a new entry to the program
     const createSubmission = async (event: { preventDefault: () => void}) => {
         event.preventDefault();
         const studentIntro = new StudentIntro(name, thoughts);
         await handleTransactionSubmit(studentIntro);
     };
-
+   //to create a new transaction
     const handleTransactionSubmit = async (studentIntro: StudentIntro) => {
         if (!connection || !publicKey) {
             toast.error("connect you wallet please");
