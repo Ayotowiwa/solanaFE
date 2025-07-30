@@ -44,6 +44,8 @@ const handleTransactionSubmit = async (studentIntro : StudentIntro) => {
         );
         console.log("Derived PDA:", pda.toBase58());
 
+        const buffer = studentIntro.serialize();
+
         // ✅ Step 3: Create Instruction
         const instruction = new web3.TransactionInstruction({
             programId: new web3.PublicKey(TARGET_PROGRAM_ID),
@@ -64,7 +66,7 @@ const handleTransactionSubmit = async (studentIntro : StudentIntro) => {
                     isWritable: false,
                 },
             ],
-            data: Buffer.alloc(0), // no data for now
+            data: buffer, // no data for now
         });
         console.log("Instruction created");
 
